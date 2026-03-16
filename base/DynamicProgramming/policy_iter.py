@@ -1,3 +1,6 @@
+import copy
+
+
 class CliffWalkingEnv:
     def __init__(self, ncol=12, nrow=4):
         self.ncol = ncol
@@ -66,7 +69,57 @@ class PolicyIteration:
         print("strategy evaluation finished after %d epoches."%cnt)
 
     def policy_improvement(self):
-        pass
+        for s in range(self.env.nrow*self.env.ncol):
+            qsa_list = []
+            for a in range(4):
+                qsa = 0
+                for res in self.env.P[s][a]:
+                    p, next_state, r, done = res
+                    qsa += p*(r+self.gamma*self.v[next_state]*(1-done))
+                qsa_list.append(qsa)
+            maxq = max(qsa_list)
+            cntq = qsa_list.count(maxq)
+            # averagely seperate.
+            self.pi[s] = [1/cntq if q==maxq else 0 for q in qsa_list]
+        print("strategy improvement done.")
+        return self.pi
 
     def policy_iteration(self):
-        pass
+        while 1:
+            self.policy_evaluation()
+            old_pi = copy.deepcopy(self.pi)
+            new_pi = self.policy_improvement()
+            if old_pi==new_pi: break
+
+
+def print_agent(agent, action_meaning, disaster=[], end=[]):
+    print("state-value:")
+    for i in range(agent.env.nrow):
+        for j in range(agent.env.ncol):
+            print('%6.6s'%('%.3f'%agent.v[i*agent.env.ncol+j]), end=' ')
+        print()
+
+    print("strategy:")
+    for i in range(agent.env.nrow):
+        for j in range(agent.env.ncol):
+            if(i*agent.env.ncol+j) in disaster:
+                print('****', end=' ')
+            elif(i*agent.env.ncol+j) in end:
+                print('EEEE',end=' ')
+            else:
+                a = agent.pi[i*agent.env.ncol+j]
+                pi_str = ''
+                for k in range(len(action_meaning)):
+                    pi_str += action_meaning[k] if a[k] > 0 else ','
+                print(pi_str, end=' ')
+            print()
+
+
+if __name__ == '__main__':
+    env = CliffWalkingEnv()
+    action_meaning = ['^','v','<','>']
+    theta = 0.001 #stop train max_diff
+    gamma = 0.9
+    agent = PolicyIteration(env, theta, gamma)
+    agent.policy_iteration()
+    print_agent(agent, action_meaning, list(range(37, 47)), [47])
