@@ -57,6 +57,23 @@ class Sarsa:
         self.Q_table[s0,a0] += self.alpha*td_error
 
 
+def print_agent(agent, env, action_meaning, disaster=[], end=[]):
+    for i in range(env.nrow):
+        for j in range(env.ncol):
+            if(i*env.ncol+j) in disaster:
+                print('****',end=' ')
+            elif(i*env.ncol+j) in end:
+                print('EEEE',end=' ')
+            else:
+                a=agent.best_action(i*env.ncol+j)
+                pi_str = ''
+                for k in range(len(action_meaning)):
+                    pi_str += action_meaning[k] if a[k] > 0 else '.'
+                print(pi_str, end=' ')
+        print()
+
+
+
 if __name__ == '__main__':
     ncol, nrow = 12, 4
     env = CliffEnv(ncol, nrow)
@@ -98,3 +115,7 @@ if __name__ == '__main__':
     plt.ylabel('Returns')
     plt.title('Sarsa on {}'.format('Cliff Walking'))
     plt.show()
+
+    action_meaning = ['^','v','<','>']
+    print("Sarsa-algorithm, final strategy:")
+    print_agent(agent, env, action_meaning, list(range(37, 47)),[47])
